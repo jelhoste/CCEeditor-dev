@@ -20982,6 +20982,17 @@ function _doIrealImportAsSetlist(songDataList){
 // de le transformer en une vraie setlist sauvegardée.
 let _asmStaging=[]; // [{title,data}]
 
+// showModal() ferme systématiquement toute modale déjà ouverte avant d'en
+// afficher une nouvelle — ce qui convient pour une modale isolée, mais pas
+// ici : les sous-fenêtres de choix (setlist, playlist, morceaux) s'ouvrent
+// PAR-DESSUS la fenêtre principale de l'assembleur, qui doit rester en vie
+// en arrière-plan. On les ajoute donc directement, sans passer par
+// showModal().
+function _asmShowSubModal(modal){
+  modal.classList.add('app-modal');
+  document.body.appendChild(modal);
+}
+
 function openSetlistAssembler(){
   _asmStaging=[];
   closeSetlistModal();
@@ -21106,7 +21117,7 @@ function _asmAddFromCCE(parentInner){
   inner.appendChild(head); inner.appendChild(list); inner.appendChild(foot);
   modal.appendChild(inner);
   modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
-  showModal(modal);
+  _asmShowSubModal(modal);
 }
 
 // Sous-sélecteur : choisir une playlist iReal Pro (fichier ou lien collé),
@@ -21155,7 +21166,7 @@ function _asmAddFromIreal(parentInner){
   inner.appendChild(fileInp); inner.appendChild(linkInp); inner.appendChild(btnRow);
   modal.appendChild(inner);
   modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
-  showModal(modal);
+  _asmShowSubModal(modal);
 }
 
 // Popup de sélection tactile générique (cases à cocher) : items est soit une
@@ -21217,7 +21228,7 @@ function _asmPickTracks(items, titleFn, isIreal){
   inner.appendChild(head); inner.appendChild(list); inner.appendChild(foot);
   modal.appendChild(inner);
   modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
-  showModal(modal);
+  _asmShowSubModal(modal);
 }
 
 // Conclut l'assemblage : soit ouvre directement le premier morceau sans rien
