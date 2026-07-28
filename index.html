@@ -3715,7 +3715,9 @@ ${p}
       <button class="tbtn" onclick="setlistAddFromSaved()" style="font-size:.58rem" title="Ajouter depuis les grilles sauvegardées">+ Depuis grilles</button>
       <button class="tbtn" onclick="setlistAddFromFile()" style="font-size:.58rem" title="Ajouter depuis un fichier .cce.json">+ Fichier</button>
     </div>
-    <div style="padding:.3rem .7rem 0;flex-shrink:0">
+    <div style="padding:.3rem .7rem 0;flex-shrink:0;display:flex;gap:.4rem;flex-wrap:wrap">
+      <button class="tbtn" onclick="setlistSelectAllTracks(true)" style="font-size:.58rem">Tout</button>
+      <button class="tbtn" onclick="setlistSelectAllTracks(false)" style="font-size:.58rem">Aucun</button>
       <button class="tbtn" onclick="setlistMergeSelected()" style="font-size:.58rem" title="Concatène les morceaux cochés ci-dessous en un seul, à leur emplacement dans la liste">🔗 Fusionner la sélection</button>
     </div>
     <div id="setlist-tracks" style="overflow-y:auto;flex:1;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.3rem"></div>
@@ -21200,9 +21202,15 @@ function _asmPickTracks(items, titleFn, isIreal){
     list.appendChild(row);
   });
   const foot=document.createElement('div');
-  foot.style.cssText=`display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--rule);flex-shrink:0`;
+  foot.style.cssText=`display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap`;
+  const btnAll=document.createElement('button');
+  btnAll.className='tbtn'; btnAll.textContent='Tout'; btnAll.style.cssText='font-size:.6rem;padding:.5rem .7rem;min-height:38px';
+  btnAll.onclick=()=>{ items.forEach((_,i)=>{ const c=document.getElementById('asmp-chk-'+i); if(c) c.checked=true; }); };
+  const btnNone=document.createElement('button');
+  btnNone.className='tbtn'; btnNone.textContent='Aucun'; btnNone.style.cssText='font-size:.6rem;padding:.5rem .7rem;min-height:38px';
+  btnNone.onclick=()=>{ items.forEach((_,i)=>{ const c=document.getElementById('asmp-chk-'+i); if(c) c.checked=false; }); };
   const btnCancel=document.createElement('button');
-  btnCancel.className='tbtn'; btnCancel.textContent='Annuler'; btnCancel.style.cssText='font-size:.62rem';
+  btnCancel.className='tbtn'; btnCancel.textContent='Annuler'; btnCancel.style.cssText='font-size:.62rem;margin-left:auto';
   btnCancel.onclick=()=>modal.remove();
   const btnAdd=document.createElement('button');
   btnAdd.className='tbtn'; btnAdd.textContent='Ajouter la sélection';
@@ -21224,7 +21232,7 @@ function _asmPickTracks(items, titleFn, isIreal){
     modal.remove();
     _asmRender();
   };
-  foot.appendChild(btnCancel); foot.appendChild(btnAdd);
+  foot.appendChild(btnAll); foot.appendChild(btnNone); foot.appendChild(btnCancel); foot.appendChild(btnAdd);
   inner.appendChild(head); inner.appendChild(list); inner.appendChild(foot);
   modal.appendChild(inner);
   modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
@@ -21318,6 +21326,9 @@ function _asmMerge(modal){
 // Fusionne les morceaux COCHÉS dans l'éditeur de setlist, à leur emplacement
 // dans la liste — les morceaux non cochés restent inchangés, à leur place.
 // La setlist est réenregistrée automatiquement avec le nouveau contenu.
+function setlistSelectAllTracks(on){
+  document.querySelectorAll('.sme-merge-chk').forEach(c=>{ c.checked=on; });
+}
 function setlistMergeSelected(){
   if(!_setlistCurrent) return;
   const checks=Array.from(document.querySelectorAll('.sme-merge-chk'))
