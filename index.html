@@ -98,6 +98,7 @@
   --typo-annot-size:20px; --typo-annot-style:normal;
   --typo-title-family:'Fraunces',Georgia,serif;
   --typo-title-size:28px; --typo-title-weight:600;
+  --typo-composer-size:13.6px; --typo-arranger-size:13.6px;
   --typo-section-family:'JetBrains Mono',monospace;
   --typo-section-size:15px;
   --typo-sym-size:20px;
@@ -322,6 +323,8 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--ink);
   font-weight:var(--typo-title-weight);color:var(--ink);line-height:1.1;white-space:pre-wrap}
 .ph-title[onclick]:hover{opacity:.75}
 .ph-sub{font-size:.85rem;color:var(--ink2);margin-top:.1rem;font-family:var(--font-body);white-space:pre-wrap}
+.ph-composer{font-size:var(--typo-composer-size,.85rem)}
+.ph-arranger{font-size:var(--typo-arranger-size,.85rem)}
 .ph-tag[onclick]:hover{opacity:.75;border-color:var(--accent)}
 .ph-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.22rem}
 .ph-tag{font-family:var(--font-mono);font-size:calc(.58rem * var(--ph-tag-scale));background:var(--ui);border:1px solid var(--rule);
@@ -1295,6 +1298,9 @@ textarea.fi{resize:vertical;min-height:40px}
 }
 .notpal-dot:hover { background:var(--ui2); }
 .notpal-dot input { cursor:pointer;accent-color:var(--accent);width:12px;height:12px; }
+.sme-row-dragging{box-shadow:0 10px 28px rgba(0,0,0,.4);cursor:grabbing;transition:box-shadow .15s}
+.sme-insert-before{border-top:3px solid var(--accent)!important}
+.sme-insert-after{border-bottom:3px solid var(--accent)!important}
 /* fin des styles */
 </style>
 <script>/*!
@@ -1337,6 +1343,7 @@ ${p}
 </script>
 </head>
 <body data-theme="light">
+<script>try{var _dt=localStorage.getItem('cce-device-theme'); if(_dt) document.body.dataset.theme=_dt;}catch(e){}</script>
 
 <!-- ══ TOPBAR ══════════════════════════════════════════ -->
 <div id="topbar">
@@ -1863,6 +1870,26 @@ ${p}
       <div class="fg"><label class="fl">Arrangeur</label>
         <div class="rt-bar"><button class="rt-btn" onmousedown="event.preventDefault();rtFormat('b','s-arranger',autoSaveSettings)"><b>B</b></button><button class="rt-btn" onmousedown="event.preventDefault();rtFormat('i','s-arranger',autoSaveSettings)"><i>I</i></button><button class="rt-btn" onmousedown="event.preventDefault();rtFormat('u','s-arranger',autoSaveSettings)"><u>U</u></button></div>
         <input type="text" class="fi" id="s-arranger" oninput="autoSaveSettings()"></div>
+    </div>
+    <div class="frow" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.35rem">
+      <div class="fg"><label class="fl">Taille titre (px)</label>
+        <div class="stepper">
+          <button class="step-btn left" onclick="stepVal('s-title-size',-1,applyTitleSubSizes)">−</button>
+          <input type="number" class="fi" id="s-title-size" value="28" min="10" max="60" step="1" oninput="applyTitleSubSizes()">
+          <button class="step-btn right" onclick="stepVal('s-title-size',1,applyTitleSubSizes)">+</button>
+        </div></div>
+      <div class="fg"><label class="fl">Taille compositeur (px)</label>
+        <div class="stepper">
+          <button class="step-btn left" onclick="stepVal('s-composer-size',-1,applyTitleSubSizes)">−</button>
+          <input type="number" class="fi" id="s-composer-size" value="14" min="6" max="40" step="1" oninput="applyTitleSubSizes()">
+          <button class="step-btn right" onclick="stepVal('s-composer-size',1,applyTitleSubSizes)">+</button>
+        </div></div>
+      <div class="fg"><label class="fl">Taille arrangeur (px)</label>
+        <div class="stepper">
+          <button class="step-btn left" onclick="stepVal('s-arranger-size',-1,applyTitleSubSizes)">−</button>
+          <input type="number" class="fi" id="s-arranger-size" value="14" min="6" max="40" step="1" oninput="applyTitleSubSizes()">
+          <button class="step-btn right" onclick="stepVal('s-arranger-size',1,applyTitleSubSizes)">+</button>
+        </div></div>
     </div>
     <div class="frow" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr;margin-bottom:.35rem">
       <div class="fg"><label class="fl">Tonalité</label>
@@ -2530,6 +2557,7 @@ ${p}
     <button class="ty-tab ty-tab-reset" onclick="symeRemove()">🗑 Suppr.</button>
     <button class="ty-tab ty-tab-close" onclick="closeSymEditor()">✕</button>
   </div>
+  <div id="sym-nearby-bar" style="display:none;align-items:center;gap:4px;padding:.3rem .5rem;border-bottom:1px solid var(--rule);background:var(--ui2);flex-wrap:wrap"></div>
   <div style="padding:.5rem .7rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:.4rem">
       <span class="fl" style="margin:0">Taille (px)</span>
@@ -2575,6 +2603,7 @@ ${p}
     <button class="ty-tab ty-tab-reset" onclick="clearAnnotPanel()">Effacer</button>
     <button class="ty-tab ty-tab-close" onclick="closeAnnotPanel()">✕</button>
   </div>
+  <div id="annot-nearby-bar" style="display:none;align-items:center;gap:4px;padding:.3rem .5rem;border-bottom:1px solid var(--rule);background:var(--ui2);flex-wrap:wrap"></div>
   <div style="padding:.5rem .7rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:.4rem">
       <span class="fl" style="margin:0">Taille (px)</span>
@@ -2600,6 +2629,10 @@ ${p}
         <button class="step-btn right" onclick="stepVal('annot-oy',1,applyAnnotPanel)">+</button>
       </div>
     </div>
+    <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer">
+      <input type="checkbox" id="annot-overflow" onchange="applyAnnotPanel()" style="width:16px;height:16px;cursor:pointer">
+      <span class="fl" style="margin:0" title="Le texte tient sur une seule ligne et déborde visuellement sur les mesures suivantes, au lieu de revenir à la ligne dans la largeur de cette seule mesure">Déborder sur les mesures suivantes</span>
+    </label>
   </div>
 </div>
 
@@ -2629,6 +2662,7 @@ ${p}
     <button class="ty-tab ty-tab-reset" onclick="clearSecPanel()">Effacer</button>
     <button class="ty-tab ty-tab-close" onclick="closeSecPanel()">✕</button>
   </div>
+  <div id="sec-nearby-bar" style="display:none;align-items:center;gap:4px;padding:.3rem .5rem;border-bottom:1px solid var(--rule);background:var(--ui2);flex-wrap:wrap"></div>
   <div id="sec-tempo-row" style="display:none;padding:.4rem .7rem;gap:1rem;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--rule)">
     <div style="display:flex;align-items:center;gap:.4rem">
       <span class="fl" style="margin:0">BPM</span>
@@ -2787,6 +2821,18 @@ ${p}
     <button class="ty-tab ty-tab-reset" onclick="clearNotationSlots()" title="Effacer toutes les notes">Vider</button>
     <button class="ty-tab ty-tab-reset" onclick="removeNotation()" title="Supprimer la zone notation">🗑</button>
     <button class="ty-tab ty-tab-close" style="margin-left:auto;flex-shrink:0" onclick="closeNotationPanel()">✕</button>
+  </div>
+  <div class="notbar" style="flex-wrap:wrap;background:var(--ui2);border-bottom:1px solid var(--rule)">
+    <span class="notbar-lbl">Simile</span>
+    <button class="ty-tab" onclick="setNotationSimile(1)" title="Répète la mesure précédente (signe simple)">𝄎</button>
+    <button class="ty-tab" onclick="setNotationSimile(2)" title="Répète les 2 mesures précédentes (occupe 2 mesures)">𝄎𝄎</button>
+    <button class="ty-tab ty-tab-reset" onclick="clearNotationSimile()" title="Revenir à une notation normale (redonne l'accès aux notes)">✕ Simile</button>
+    <span class="notbar-sep"></span>
+    <button class="ty-tab" onclick="notationCopy()" title="Copier cette zone de notation">📋 Copier</button>
+    <button class="ty-tab" onclick="notationPasteNext()" title="Coller sur la mesure suivante, et continuer l'édition là-bas (pratique pour coller plusieurs fois de suite)">📥 Coller →</button>
+    <span class="notbar-lbl">sur</span>
+    <input type="number" id="notation-paste-n" value="2" min="1" max="20" class="notbar-num">
+    <button class="ty-tab" onclick="notationPasteN()" title="Colle sur N mesures suivantes en une seule fois">📥 Coller ×N</button>
   </div>
 
   <!-- Onglet Rythme -->
@@ -3537,6 +3583,7 @@ ${p}
     <button class="tbtn" style="margin-left:auto" onclick="clearPedLine()">🗑</button>
     <button class="tbtn pri" onclick="closePedLineModal()">✓</button>
   </div>
+  <div id="pedline-nearby-bar" style="display:none;align-items:center;gap:4px;padding:.3rem .5rem;border-bottom:1px solid var(--rule);background:var(--ui2);flex-wrap:wrap"></div>
 </div>
 <!-- ── Bottom sheet symboles ── -->
 <div id="sym-sheet-overlay" style="display:none;position:fixed;inset:0;z-index:810;background:rgba(0,0,0,.35)" onclick="closeSymSheet()"></div>
@@ -3704,9 +3751,8 @@ ${p}
 
 <!-- ══ SETLIST EDITOR MODAL ══════════════════════════════ -->
 <div id="setlist-editor-modal" style="display:none;position:fixed;inset:0;z-index:930;
-  background:rgba(0,0,0,.45);align-items:center;justify-content:center">
-  <div style="background:var(--modal-bg);border-radius:calc(var(--r)*2);box-shadow:0 8px 40px rgba(0,0,0,.3);
-    width:min(560px,96vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column">
+  background:var(--modal-bg);flex-direction:column">
+  <div style="width:min(820px,100%);margin:0 auto;height:100%;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;gap:.5rem;padding:.7rem 1rem;border-bottom:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap">
       <input type="text" id="setlist-name" placeholder="Nom du concert…"
         style="flex:1;font-family:var(--font-mono);font-size:.7rem;padding:.3rem .5rem;
@@ -3720,7 +3766,7 @@ ${p}
       <button class="tbtn" onclick="setlistSelectAllTracks(false)" style="font-size:.58rem">Aucun</button>
       <button class="tbtn" onclick="setlistMergeSelected()" style="font-size:.58rem" title="Concatène les morceaux cochés ci-dessous en un seul, à leur emplacement dans la liste">🔗 Fusionner la sélection</button>
     </div>
-    <div id="setlist-tracks" style="overflow-y:auto;flex:1;padding:.5rem .7rem;display:flex;flex-direction:column;gap:.3rem"></div>
+    <div id="setlist-tracks" style="overflow-y:auto;flex:1;padding:.5rem .7rem;column-gap:.5rem"></div>
     <div style="display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap">
       <button class="tbtn" onclick="setlistSave()" style="font-size:.62rem;background:var(--accent);color:var(--acfg);border-color:var(--accent)">💾 Sauvegarder</button>
       <button class="tbtn" onclick="setlistExport()" style="font-size:.62rem">⬇ Exporter .json</button>
@@ -4058,6 +4104,7 @@ document.addEventListener('click',e=>{
 // ════ THEME ══════════════════════════════════════════════
 function setTheme(t){
   document.body.dataset.theme=t;
+  try{ localStorage.setItem('cce-device-theme',t); }catch(e){}
   ['light','dark','hc'].forEach(x=>{
     const el=document.getElementById('dd-'+x);
     if(el) el.style.fontWeight=x===t?'700':'400';
@@ -5113,7 +5160,7 @@ function renderLyricsPage(v){
     hdr.className='page-header';
     hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
       <div class="ph-title" onclick="lyricsCleanup();openTypo();typoTab('proprietes')" title="Modifier les propriétés" style="cursor:pointer">${s.title||'Sans titre'}</div>
-      ${s.composer?`<span class="ph-sub">${s.composer}</span>`:''}
+      ${s.composer?`<span class="ph-sub ph-composer">${s.composer}</span>`:''}
     </div>
     <div class="ph-tags">
       ${s.key?`<span class="ph-tag">Ton. <b>${(state.transposeDisplay&&state.transposeDisplay!==0)?transposeKey(s.key,state.transposeDisplay,state.transposeDisplayFlat||false):s.key}</b></span>`:''}
@@ -5825,7 +5872,7 @@ function renderDiagOnlyPage(v){
   hdr.className='page-header';
   hdr.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
     <div class="ph-title" onclick="openTypo();typoTab('proprietes')" title="Modifier les propriétés" style="cursor:pointer">${s.title||'Sans titre'}</div>
-    ${(s.composer)?`<span class="ph-sub">${s.composer}</span>`:''}
+    ${(s.composer)?`<span class="ph-sub ph-composer">${s.composer}</span>`:''}
   </div>
   <div class="ph-tags">
     ${s.key?`<span class="ph-tag">Ton. <b>${(state.transposeDisplay&&state.transposeDisplay!==0)?transposeKey(s.key,state.transposeDisplay,state.transposeDisplayFlat||false):s.key}</b></span>`:''}
@@ -6148,6 +6195,7 @@ function renderSetlistList(){
 
 function renderSetlistTracks(){
   const container=document.getElementById('setlist-tracks');
+  container.style.columnCount='';
   container.innerHTML='';
   if(!_setlistCurrent?.tracks?.length){
     container.innerHTML=`<div style="font-family:var(--font-mono);font-size:.6rem;color:var(--ink3);text-align:center;padding:1.5rem">
@@ -6156,27 +6204,138 @@ function renderSetlistTracks(){
   }
   _setlistCurrent.tracks.forEach((track,i)=>{
     const row=document.createElement('div');
-    row.style.cssText=`display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;
+    row.dataset.idx=i;
+    row.style.cssText=`display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;margin-bottom:.3rem;
+      break-inside:avoid;-webkit-column-break-inside:avoid;
       border:1px solid var(--rule);border-radius:var(--r);background:var(--ui)`;
     row.innerHTML=`
       <input type="checkbox" class="sme-merge-chk" data-idx="${i}" style="width:20px;height:20px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)">
       <span style="font-family:var(--font-mono);font-size:.6rem;color:var(--ink3);min-width:18px">${i+1}.</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-family:var(--font-mono);font-size:.65rem;font-weight:700;color:var(--ink);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${track.title||'Sans titre'}</div>
-        <div style="font-family:var(--font-mono);font-size:.5rem;color:var(--ink3)">
-          ${track.data?.state?.song?.key||''} · ${track.data?.state?.song?.tempo||''} BPM · ${track.data?.state?.measures?.length||0} mes.</div>
+      <div style="flex:1;min-width:0;display:flex;align-items:baseline;gap:.4rem">
+        <span style="font-family:var(--font-mono);font-size:.65rem;font-weight:700;color:var(--ink);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${track.title||'Sans titre'}</span>
+        <span style="font-family:var(--font-mono);font-size:.5rem;color:var(--ink3);flex-shrink:0">${track.data?.state?.song?.tempo||''} BPM</span>
       </div>
       <button onclick="setlistLoadTrack(${i})" title="Ouvrir dans l'éditeur"
         style="font-size:.65rem;background:none;border:1px solid var(--rule2);border-radius:var(--r);padding:2px 6px;cursor:pointer;color:var(--accent)">✎</button>
-      <button onclick="setlistMoveTrack(${i},-1)" ${i===0?'disabled':''} title="Monter"
-        style="font-size:.65rem;background:none;border:1px solid var(--rule2);border-radius:var(--r);padding:2px 5px;cursor:pointer;color:var(--ink3)">↑</button>
-      <button onclick="setlistMoveTrack(${i},1)" ${i===_setlistCurrent.tracks.length-1?'disabled':''} title="Descendre"
-        style="font-size:.65rem;background:none;border:1px solid var(--rule2);border-radius:var(--r);padding:2px 5px;cursor:pointer;color:var(--ink3)">↓</button>
       <button onclick="setlistRemoveTrack(${i})" title="Retirer"
-        style="font-size:.65rem;background:none;border:1px solid var(--rule2);border-radius:var(--r);padding:2px 6px;cursor:pointer;color:var(--ink3)">✕</button>`;
+        style="font-size:.65rem;background:none;border:1px solid var(--rule2);border-radius:var(--r);padding:2px 6px;cursor:pointer;color:var(--ink3)">✕</button>
+      <span class="sme-drag-handle" title="Maintenir pour réordonner" style="flex-shrink:0;font-size:1rem;line-height:1;
+        color:var(--ink3);padding:.3rem .4rem;cursor:grab;touch-action:none;
+        -webkit-touch-callout:none;-webkit-user-select:none;user-select:none">⠿</span>`;
     container.appendChild(row);
+    const handle=row.querySelector('.sme-drag-handle');
+    handle.addEventListener('pointerdown',e=>_smeRowPointerDown(e,i,row));
+    handle.addEventListener('contextmenu',e=>e.preventDefault());
   });
+  // Une seule colonne tant que tout tient ; deux colonnes seulement si la
+  // liste dépasse la hauteur disponible — mesuré après construction, à
+  // partir de la hauteur réelle d'une ligne (même principe que le Reader).
+  const rows=container.children;
+  if(rows.length){
+    const rowH=rows[0].offsetHeight+5; // + marge basse
+    const availH=container.clientHeight||1;
+    const rowsPerCol=Math.max(1,Math.floor(availH/rowH));
+    const neededCols=rows.length>rowsPerCol?2:1;
+    container.style.columnCount=neededCols;
+  }
+}
+
+// ── Glisser-déposer (armé par appui long) pour réordonner la setlist ──
+// Remplace les anciennes flèches ▲▼. Reprend telle quelle la mécanique
+// éprouvée sur le Reader : la poignée porte touch-action:none dès sa
+// création (un changement fait après coup, une fois le geste commencé,
+// n'est pas toujours pris en compte par le navigateur) ; le pointeur n'est
+// capturé qu'au moment où le glisser s'arme (pas dès qu'on pose le doigt),
+// pour ne jamais gêner le défilement normal avant ce moment ; la cible de
+// dépôt est déterminée par la position réelle à l'écran, donc fonctionne
+// aussi bien en une qu'en deux colonnes.
+let _smeDrag=null;
+const SME_DRAG_HOLD_MS=400;
+const SME_DRAG_SLOP_PX=10;
+
+function _smeRowPointerDown(e,i,row){
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  _smeDrag={idx:i, row, armed:false, startX:e.clientX, startY:e.clientY, dropTarget:null, timer:null, pointerId:e.pointerId};
+  _smeDrag.timer=setTimeout(()=>_smeArmDrag(),SME_DRAG_HOLD_MS);
+  row.addEventListener('pointermove',_smeRowPointerMove);
+  row.addEventListener('pointerup',_smeRowPointerUp);
+  row.addEventListener('pointercancel',_smeRowPointerUp);
+}
+function _smeArmDrag(){
+  if(!_smeDrag) return;
+  _smeDrag.armed=true;
+  _smeDrag.row.classList.add('sme-row-dragging');
+  _smeDrag.row.style.zIndex='10';
+  try{ _smeDrag.row.setPointerCapture(_smeDrag.pointerId); }catch(err){}
+  if(navigator.vibrate){ try{ navigator.vibrate(15); }catch(err){} }
+}
+function _smeRowPointerMove(e){
+  if(!_smeDrag) return;
+  const dx=e.clientX-_smeDrag.startX, dy=e.clientY-_smeDrag.startY;
+  if(!_smeDrag.armed){
+    if(Math.abs(dx)>SME_DRAG_SLOP_PX||Math.abs(dy)>SME_DRAG_SLOP_PX){
+      clearTimeout(_smeDrag.timer);
+      _smeCleanupDrag();
+    }
+    return;
+  }
+  e.preventDefault();
+  _smeDrag.row.style.transform=`translate(${dx}px,${dy}px) scale(1.03)`;
+  const drop=_smeFindDropTarget(e.clientX,e.clientY);
+  document.querySelectorAll('#setlist-tracks > div[data-idx]').forEach(r=>r.classList.remove('sme-insert-before','sme-insert-after'));
+  if(drop) drop.row.classList.add(drop.before?'sme-insert-before':'sme-insert-after');
+  _smeDrag.drop=drop;
+}
+function _smeRowPointerUp(e){
+  if(!_smeDrag) return;
+  clearTimeout(_smeDrag.timer);
+  if(_smeDrag.armed){
+    e.preventDefault();
+    const drop=_smeDrag.drop;
+    if(drop && drop.row!==_smeDrag.row){
+      const fromIdx=_smeDrag.idx;
+      let toIdx=parseInt(drop.row.dataset.idx)+(drop.before?0:1);
+      const [moved]=_setlistCurrent.tracks.splice(fromIdx,1);
+      if(toIdx>fromIdx) toIdx--; // la suppression au-dessus décale les index qui suivent
+      _setlistCurrent.tracks.splice(toIdx,0,moved);
+      // Enregistrement automatique après un glisser réussi (contrairement
+      // aux anciennes flèches, qui laissaient la sauvegarde manuelle).
+      _setlistCurrent.savedAt=Date.now();
+      localStorage.setItem(SETLIST_PREFIX+_setlistCurrent.id,JSON.stringify(_setlistCurrent));
+      _showSaveStatus('✓ Ordre enregistré');
+    }
+  }
+  _smeCleanupDrag();
+  renderSetlistTracks();
+}
+// Renvoie {row, before} : before=true si le point est dans la moitié
+// supérieure de la ligne visée (insertion AU-DESSUS), false si dans la
+// moitié inférieure (insertion EN DESSOUS) — matérialisé par une ligne
+// horizontale entre deux morceaux, à l'endroit précis de l'insertion.
+function _smeFindDropTarget(x,y){
+  const rows=document.querySelectorAll('#setlist-tracks > div[data-idx]');
+  for(const r of rows){
+    if(r===_smeDrag.row) continue;
+    const rect=r.getBoundingClientRect();
+    if(x>=rect.left && x<=rect.right && y>=rect.top && y<=rect.bottom){
+      return {row:r, before:(y-rect.top)<rect.height/2};
+    }
+  }
+  return null;
+}
+function _smeCleanupDrag(){
+  if(_smeDrag){
+    if(_smeDrag.armed){ try{ _smeDrag.row.releasePointerCapture(_smeDrag.pointerId); }catch(err){} }
+    _smeDrag.row.removeEventListener('pointermove',_smeRowPointerMove);
+    _smeDrag.row.removeEventListener('pointerup',_smeRowPointerUp);
+    _smeDrag.row.removeEventListener('pointercancel',_smeRowPointerUp);
+    _smeDrag.row.style.transform='';
+    _smeDrag.row.style.zIndex='';
+    _smeDrag.row.classList.remove('sme-row-dragging');
+  }
+  document.querySelectorAll('#setlist-tracks > div[data-idx]').forEach(r=>r.classList.remove('sme-insert-before','sme-insert-after'));
+  _smeDrag=null;
 }
 
 function setlistNew(){ closeSetlistModal(); openSetlistEditor(null); }
@@ -9996,6 +10155,10 @@ function typoTab(id){
     setv('s-title',s.title); setv('s-composer',s.composer); setv('s-arranger',s.arranger);
     setv('s-key',s.key); setv('s-tempo',s.tempo||120); setv('s-style',s.style);
     setv('s-capo',s.capo||0); setv('s-notes',s.notes);
+    const cs=getComputedStyle(document.documentElement);
+    setv('s-title-size',parseFloat(cs.getPropertyValue('--typo-title-size'))||28);
+    setv('s-composer-size',parseFloat(cs.getPropertyValue('--typo-composer-size'))||13.6);
+    setv('s-arranger-size',parseFloat(cs.getPropertyValue('--typo-arranger-size'))||13.6);
   }
   // Synchroniser les valeurs de l'onglet Format
   if(id==='format'){
@@ -10006,6 +10169,20 @@ function typoTab(id){
     sync('scale-sl2','scale-sl');
     sync('rowh-sl2','rowh-sl');
   }
+}
+// Taille du titre / compositeur / arrangeur, réglable directement depuis
+// l'onglet Propriétés (le titre partage la même variable CSS que le champ
+// équivalent de l'onglet Typographie — on les garde synchronisés).
+function applyTitleSubSizes(){
+  const R=document.documentElement;
+  const ts=parseFloat(document.getElementById('s-title-size')?.value)||28;
+  const cs=parseFloat(document.getElementById('s-composer-size')?.value)||13.6;
+  const as=parseFloat(document.getElementById('s-arranger-size')?.value)||13.6;
+  R.style.setProperty('--typo-title-size',ts+'px');
+  R.style.setProperty('--typo-composer-size',cs+'px');
+  R.style.setProperty('--typo-arranger-size',as+'px');
+  const tyTs=document.getElementById('ty-ts'); if(tyTs) tyTs.value=ts;
+  reflow();
 }
 function previewTypo(){
   const R=document.documentElement;
@@ -10022,6 +10199,7 @@ function previewTypo(){
   R.style.setProperty('--typo-title-family',document.getElementById('ty-tf').value);
   R.style.setProperty('--typo-title-size',tsPx+'px');
   R.style.setProperty('--typo-title-weight',document.getElementById('ty-tw').value);
+  const sTs=document.getElementById('s-title-size'); if(sTs) sTs.value=tsPx;
   const ssPx=parseFloat(document.getElementById('ty-ss').value)||9;
   R.style.setProperty('--typo-section-family',document.getElementById('ty-sf').value);
   R.style.setProperty('--typo-section-size',ssPx+'px');
@@ -10096,6 +10274,53 @@ const resetRepeatColors=resetAllColors;
 function getComputedPx(varName){
   return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(varName))||null;
 }
+// Barre "signes proches" : quand plusieurs repères (section, annotation,
+// symboles, points d'orgue) se trouvent sur la même mesure, ils peuvent
+// être difficiles à distinguer au doigt tellement ils sont rapprochés
+// visuellement. Cette barre, affichée en haut de la modale d'édition,
+// propose de basculer directement vers l'un des autres repères de la même
+// mesure sans avoir à retaper précisément sur l'élément voulu à l'écran.
+// N'apparaît que s'il y a effectivement plus d'un repère à proposer.
+function renderNearbySigns(containerId, measIdx, currentType, currentKey){
+  const bar=document.getElementById(containerId);
+  if(!bar) return;
+  bar.innerHTML='';
+  const m=(measIdx!=null && measIdx>=0)?state.measures[measIdx]:null;
+  if(!m){ bar.style.display='none'; return; }
+  const items=[];
+  if(m.section) items.push({type:'section', key:null, label:'§ Section'});
+  if(m.annotation) items.push({type:'annotation', key:null, label:'📝 Annotation'});
+  if(m.pedLine) items.push({type:'pedline', key:null, label:'╌ '+(m.pedLine.text||'Ligne')});
+  (m.symbols||[]).forEach(s=>{
+    const names={'𝄋':'Segno','𝄌':'Coda','𝄐':'Pt. orgue','Fine':'Fine','D.C.':'D.C.','D.S.':'D.S.'};
+    items.push({type:'symbol', key:s, label:s+' '+(names[s]||'')});
+  });
+  (m.fermataSlots||[]).forEach(f=>{
+    const slot=_fSlotNum(f);
+    items.push({type:'fermata', key:slot, label:'𝄐 Pt. orgue #'+(slot+1)});
+  });
+  if(items.length<2){ bar.style.display='none'; return; } // rien "de proche" à proposer
+  bar.style.display='flex';
+  const label=document.createElement('span');
+  label.textContent='Signes proches :';
+  label.style.cssText='font-family:var(--font-mono);font-size:.52rem;color:var(--ink3);align-self:center;margin-right:.2rem';
+  bar.appendChild(label);
+  items.forEach(it=>{
+    const isCurrent=it.type===currentType && it.key===currentKey;
+    const btn=document.createElement('button');
+    btn.className='ty-tab';
+    btn.textContent=it.label;
+    btn.style.cssText='font-size:.55rem;padding:.15rem .4rem'+(isCurrent?';background:var(--accent);color:var(--acfg);border-color:var(--accent)':'');
+    btn.onclick=()=>{
+      if(it.type==='section') openSecPanel(measIdx);
+      else if(it.type==='annotation') openAnnotPanel(measIdx);
+      else if(it.type==='pedline'){ select(measIdx); openPedLineModal(); }
+      else if(it.type==='symbol') openSymEditor(measIdx,it.key);
+      else if(it.type==='fermata') openFermataEditor(measIdx,it.key);
+    };
+    bar.appendChild(btn);
+  });
+}
 // ════ ANNOTATION PANEL ════════════════════════════════════
 let _annotIdx=null, _annotAlign='left';
 function openAnnotPanel(idx){
@@ -10112,8 +10337,11 @@ function openAnnotPanel(idx){
   annotHighlightAlign(_annotAlign);
   const annotColorInp=document.getElementById('annot-color');
   if(annotColorInp) annotColorInp.value=ao.color||getComputedStyle(document.documentElement).getPropertyValue('--ink2').trim()||'#5a5854';
+  const overflowChk=document.getElementById('annot-overflow');
+  if(overflowChk) overflowChk.checked=!!ao.overflow;
   closeAllPanels();
   document.getElementById('annot-panel').style.display='block';
+  renderNearbySigns('annot-nearby-bar', idx, 'annotation', null);
   focusIfNotTouch(document.getElementById('annot-panel-inp'));
 }
 function annotSetAlign(a){ _annotAlign=a; annotHighlightAlign(a); applyAnnotPanel(); }
@@ -10136,6 +10364,7 @@ function applyAnnotPanel(){
     offsetX:parseFloat(document.getElementById('annot-ox')?.value)||0,
     offsetY:parseFloat(document.getElementById('annot-oy')?.value)||0,
     color:document.getElementById('annot-color')?.value||null,
+    overflow:document.getElementById('annot-overflow')?.checked||false,
   };
   const inp=document.getElementById('annot-inp'); if(inp) inp.value=text;
   reflow();
@@ -10185,6 +10414,7 @@ function openSecPanel(idx){
   secToggleTempo();
   closeAllPanels();
   document.getElementById('sec-panel').style.display='block';
+  renderNearbySigns('sec-nearby-bar', idx, 'section', null);
   focusIfNotTouch(document.getElementById('sec-panel-inp'));
 }
 function closeSecPanel(){ document.getElementById('sec-panel').style.display='none'; _secPanelIdx=null; }
@@ -10288,6 +10518,121 @@ function toggleNotVoice(){
   _notVoice = _notVoice===2 ? 1 : 2;
   const btn=document.getElementById('not-voice-btn');
   if(btn) btn.textContent = _notVoice===2 ? 'V2 ↓' : 'V1 ↑';
+}
+// ════ NOTATION : copier / coller ════════════════════════════════
+// Copie profonde : jamais de référence partagée entre la mesure source et
+// les mesures collées. Le simile n'est jamais copié (voir notationCopy) :
+// coller doit toujours donner de vraies notes, un simile n'a de sens que
+// juste après la notation qu'il répète, pas ailleurs.
+let _notationClipboard=null;
+function notationCopy(){
+  if(_notEditIdx===null) return;
+  const m=state.measures[_notEditIdx];
+  if(!m || !m.notation){ alert('Rien à copier sur cette mesure.'); return; }
+  _notationClipboard=JSON.parse(JSON.stringify(m.notation));
+  delete _notationClipboard.simile;
+  _showSaveStatus('✓ Notation copiée');
+}
+function notationPasteNext(){
+  if(!_notationClipboard){ alert('Copie d\'abord une zone de notation (bouton Copier).'); return; }
+  if(_notEditIdx===null) return;
+  const m=state.measures[_notEditIdx];
+  const span=(m&&m.notation&&m.notation.span)||1;
+  const targetIdx=_notEditIdx+span;
+  if(targetIdx>=state.measures.length){ alert('Pas de mesure suivante disponible.'); return; }
+  state.measures[targetIdx].notation=JSON.parse(JSON.stringify(_notationClipboard));
+  reflow();
+  // Déplace le point d'édition sur la mesure qu'on vient de coller, pour
+  // pouvoir recoller à la suite d'un simple clic répété.
+  select(targetIdx);
+  openNotationPanel();
+  _showSaveStatus('✓ Notation collée');
+}
+function notationPasteN(){
+  if(!_notationClipboard){ alert('Copie d\'abord une zone de notation (bouton Copier).'); return; }
+  if(_notEditIdx===null) return;
+  const n=Math.max(1,parseInt(document.getElementById('notation-paste-n')?.value)||1);
+  const m=state.measures[_notEditIdx];
+  const span=(m&&m.notation&&m.notation.span)||1;
+  const pasteSpan=_notationClipboard.span||1;
+  let idx=_notEditIdx+span, count=0;
+  while(count<n && idx<state.measures.length){
+    state.measures[idx].notation=JSON.parse(JSON.stringify(_notationClipboard));
+    idx+=pasteSpan; count++;
+  }
+  reflow();
+  if(count<n) alert('Collé sur '+count+' mesure'+(count>1?'s':'')+' seulement — la fin de la grille a été atteinte.');
+  else _showSaveStatus('✓ Collé sur '+count+' mesure'+(count>1?'s':''));
+}
+
+// ════ NOTATION : simile / double simile ═════════════════════════
+// Marque la zone de notation actuelle comme "pareil qu'avant" (simile=1,
+// une mesure) ou "pareil que les 2 mesures précédentes" (simile=2, occupe
+// alors 2 mesures — span est réglé en conséquence). Champ additionnel :
+// un fichier ouvert avec un ancien CCE Editor ignore simplement ce champ
+// et affiche les notes normalement si jamais il y en avait — et un fichier
+// SANS ce champ (tout l'existant) s'affiche exactement comme avant, aucune
+// zone de notation existante n'est affectée par cet ajout.
+function setNotationSimile(n){
+  if(_notEditIdx===null) return;
+  const m=state.measures[_notEditIdx];
+  if(!m.notation) initRhythmNotation(_notEditIdx);
+  m.notation.simile=n;
+  m.notation.span=n;
+  reflow();
+  const spanInp=document.getElementById('not-span-val');
+  if(spanInp) spanInp.value=m.notation.span;
+  _showSaveStatus('✓ Simile '+(n===2?'double':'simple')+' appliqué');
+}
+function clearNotationSimile(){
+  if(_notEditIdx===null) return;
+  const m=state.measures[_notEditIdx];
+  if(m.notation) delete m.notation.simile;
+  reflow();
+  _showSaveStatus('✓ Retour à la notation normale');
+}
+// Dessin partagé du signe simile pour les zones de notation — reprend
+// exactement le même tracé (barre oblique + points) que le simile des
+// grilles d'accords, en SVG pur (jamais de foreignObject), pour rester
+// pleinement compatible avec l'export et l'impression.
+// Reprend EXACTEMENT les coordonnées du glyphe simile des grilles d'accords
+// (_similesvg, viewBox 60×60, centré sur 30,30) via un <g transform>, plutôt
+// que de recalculer chaque point à la main — élimine tout risque d'erreur
+// de tracé et garantit un rendu identique à l'original.
+function _drawSimileGlyphAt(g, cx, cy, scale, dbl, col){
+  col=col||'var(--ink)';
+  const wrap=svgEl('g',{transform:`translate(${cx},${cy}) scale(${scale}) translate(-30,-30)`});
+  g.appendChild(wrap);
+  const r=3.8;
+  const mkSlash=(dx)=>svgEl('polygon',{points:
+    `${45.5+dx},10 ${54.5+dx},10 ${14.5+dx},50 ${5.5+dx},50`, fill:col});
+  if(dbl){
+    wrap.appendChild(svgEl('circle',{cx:18,cy:18,r,fill:col}));
+    wrap.appendChild(svgEl('circle',{cx:42,cy:42,r,fill:col}));
+    wrap.appendChild(mkSlash(-7));
+    wrap.appendChild(mkSlash(7));
+  } else {
+    wrap.appendChild(svgEl('circle',{cx:19,cy:19,r,fill:col}));
+    wrap.appendChild(svgEl('circle',{cx:41,cy:41,r,fill:col}));
+    wrap.appendChild(mkSlash(0));
+  }
+}
+// Point d'entrée commun : dessine le simile à l'échelle "scale"
+// (proportionnelle à la taille normale d'une portée pour ce type de
+// notation) — réduite à 52% pour cet usage précis (zones de notation),
+// sans toucher à la taille du simile des grilles d'accords, réglée
+// séparément (--simile-size). Simple : centré dans la mesure. Double :
+// placé à la toute fin de la mesure (donc à la frontière avec la mesure
+// suivante qu'il répète aussi), W représentant la largeur d'une seule
+// mesure, pas des deux combinées.
+const NOTATION_SIMILE_SCALE=0.52;
+function renderNotationSimile(svg, m, W, cy, scale){
+  const g=svgEl('g',{'pointer-events':'none'});
+  svg.appendChild(g);
+  const dbl=m.notation.simile===2;
+  const cx=dbl?W:W/2;
+  _drawSimileGlyphAt(g, cx, cy, (scale||1)*NOTATION_SIMILE_SCALE, dbl, 'var(--ink)');
+  return g;
 }
 // ════ NOTATION PANEL ══════════════════════════════════════════
 function openNotationPanel(){
@@ -12008,6 +12353,7 @@ function renderDrumsInto(svg,m,W,interactive,zoom,showClef=true,SP=1.0){
   const minLP=drumMinLP(m);
   const maxLP=drumMaxLP(m);
   const H=drumStaffH(zoom,zoom?null:minLP,zoom?null:maxLP);
+  if(n.simile){ renderNotationSimile(svg,m,W,H/2,lg/9); return; }
   const NR=drumNR(zoom);
   const STEM_LEN=3.5*lg;
   const slots=n.slots||[];
@@ -12187,7 +12533,7 @@ function renderDrumsInto(svg,m,W,interactive,zoom,showClef=true,SP=1.0){
                              :(drawB[val2]||drawB.q)(svg,baseX,noteY,stemH,col));
       }
 
-      if(nt.dot) g.appendChild(svgEl('circle',{cx:baseX+NR+9,cy:noteY,r:2,fill:col}));
+      if(nt.dot){ const _ds=NR/5; g.appendChild(svgEl('circle',{cx:baseX+NR+9*_ds,cy:noteY,r:Math.max(0.8,2*_ds),fill:col})); }
 
       if(interactive){
         g.style.cursor='pointer';
@@ -12608,6 +12954,7 @@ function renderTrebleInto(parent, m, W, selectable, CY, LG, startX, nr, spacingS
   const n=m.notation; if(!n) return;
   const LG_REF=12;
   const scale=LG/LG_REF;
+  if(n.simile){ renderNotationSimile(parent,m,W,CY,scale); return; }
   const NR=(nr||5)*scale;
   const SP=spacingScale||1.0;
   const slots=n.slots||[];
@@ -14571,6 +14918,7 @@ function renderRhythmInto(svg, m, W, interactive){
   const NOTE_Y=Math.round(38*_rsc);
   const STEM_DOWN=NOTE_Y+Math.round(26*_rsc); // bout de hampe bas + marge
   const H=Math.max(Math.round(NOTATION_H.rhythm*_rsc), STEM_DOWN+2);
+  if(n.simile){ renderNotationSimile(svg,m,W,H/2,_rsc); return; }
   const STEM_UP=NOTE_Y-Math.round(24*_rsc);
   const NR=Math.round(5*_rsc);
   const slots=n.slots||[];
@@ -14726,7 +15074,7 @@ function renderRhythmInto(svg, m, W, interactive){
         } else {
           g.appendChild(nt.rythm ? drawRythmRonde(svg,baseX,NOTE_Y,col) : drawRonde(svg,baseX,NOTE_Y,col));
         }
-        if(nt.dot) g.appendChild(svgEl('circle',{cx:baseX+NR+4,cy:NOTE_Y-1,r:2,fill:col}));
+        if(nt.dot){ const _ds=_rsc; g.appendChild(svgEl('circle',{cx:baseX+NR+4*_ds,cy:NOTE_Y-1*_ds,r:Math.max(0.8,2*_ds),fill:col})); }
       if(nt.paren) g.appendChild(drawParen(baseX,NOTE_Y,NR,col));
       }
 
@@ -15408,6 +15756,7 @@ function renderTabInto(parent, m, W, interactive, type, SP=1.0, lgOverride=null,
   const lg=lgOverride!==null?lgOverride:tabLGval(type);
   const nStr=tabStringCount(type);
   const H=tabStaffH(lg,nStr);
+  if(n.simile){ renderNotationSimile(parent,m,W,H/2,lg/9); return; }
   const slots=n.slots||[];
   const nSlots=slots.length||(n.beats||4);
   const CLEF_W=interactive?22:16;
@@ -16120,6 +16469,14 @@ function openFermataEditor(measIdx,slotIdx){
   if(symeColorInp) symeColorInp.value=inst.color||getComputedStyle(document.documentElement).getPropertyValue('--section-c').trim()||'#cc2200';
   const sp=document.getElementById('sym-panel');
   if(sp) sp.style.display='block';
+  // L'alignement gauche/centre/droite positionne une LIGNE de symboles —
+  // ça n'a pas de sens pour un point d'orgue individuel, ancré à une
+  // mesure précise (seul le décalage X/Y s'applique). On masque donc ces
+  // boutons plutôt que de les laisser cliquables sans effet.
+  ['syme-al-left','syme-al-center','syme-al-right'].forEach(id=>{
+    const b=document.getElementById(id); if(b) b.style.display='none';
+  });
+  renderNearbySigns('sym-nearby-bar', measIdx, 'fermata', slotIdx);
 }
 function openSymEditor(idx,s){
   closeAllPanels();
@@ -16140,11 +16497,15 @@ function openSymEditor(idx,s){
   }
   _symeAlign=off.align||'left';
   symeHighlightAlign(_symeAlign);
+  ['syme-al-left','syme-al-center','syme-al-right'].forEach(id=>{
+    const b=document.getElementById(id); if(b) b.style.display='';
+  });
   const symeColorInp=document.getElementById('syme-color');
   if(symeColorInp) symeColorInp.value=off.color||getComputedStyle(document.documentElement).getPropertyValue('--sym-c').trim()||'#cc2200';
   closeAllPanels();
   const sp=document.getElementById('sym-panel');
   if(sp) sp.style.display='block';
+  renderNearbySigns('sym-nearby-bar', idx, 'symbol', s);
 }
 function closeSymEditor(){
   document.getElementById('sym-panel').style.display='none';
@@ -16978,70 +17339,70 @@ function syncToolbar(){
 // ════ OVERLAY HEIGHT (dynamique) ══════════════════════════
 // Calcule la hauteur de la zone overlay selon les polices actives
 // et le contenu présent dans les mesures.
-function computeOverlayHeight(measures){
-  const R=document.documentElement;
-  const cs=getComputedStyle(R);
+// Besoin d'espace overlay (section/annotation/symboles/reprises/ligne de
+// pédale/volta) pour UNE SEULE mesure prise isolément — tient compte des
+// lignes de pédale et voltas qui démarrent sur une mesure précédente et la
+// couvrent encore (span). Réutilisé à la fois par computeOverlayHeight
+// (qui prend le maximum sur toute une ligne) et par le positionnement de
+// chaque zone de notation (qui ne doit regarder QUE les mesures qu'elle
+// couvre réellement, pas toute la ligne — voir plus bas).
+function measureOverlayNeed(m, mIdx, allMeasures, consts){
+  if(!m) return consts.topSpace;
+  const items=[];
+  if(m.section&&secObj(m.section)) items.push(consts.secH);
+  if(m.symbols&&m.symbols.length) items.push(consts.symH);
+  if(m.annotation) items.push(consts.annotH);
+  if(m.repeatCount&&m.repeatCount>2) items.push(consts.rcPx+2);
+  if(m.pedLine) items.push(14);
+  if(!m.pedLine && mIdx>0){
+    for(let pi=mIdx-1;pi>=0;pi--){
+      const pm=allMeasures[pi];
+      if(pm.pedLine){
+        if((mIdx-pi)<(pm.pedLine.span||1)) items.push(14);
+        break;
+      }
+    }
+  }
+  const textH=items.reduce((s,h)=>s+h,0)+(items.length>1?(items.length-1)*consts.gap:0);
+  let hasVolta=!!m.volta;
+  if(!hasVolta && mIdx>0){
+    for(let pi=mIdx-1;pi>=0;pi--){
+      const pm=allMeasures[pi];
+      if(pm.volta){
+        if((mIdx-pi)<(pm.volta.span||1)) hasVolta=true;
+        break;
+      }
+    }
+  }
+  const voltaH=hasVolta?consts.voltaBracketH:0;
+  return consts.topSpace+textH+voltaH;
+}
+function _overlayConsts(){
+  const cs=getComputedStyle(document.documentElement);
   const padTop=parseFloat(cs.getPropertyValue('--overlay-pad-top'))||3;
   const padExtra=parseFloat(cs.getPropertyValue('--overlay-pad-extra'))||0;
   const extraH=parseFloat(cs.getPropertyValue('--overlay-extra-h'))||0;
-  const topSpace=padTop+padExtra+extraH;
-  const voltaBracketH=parseFloat(cs.getPropertyValue('--volta-bracket-h'))||14;
-  const secPx=parseFloat(cs.getPropertyValue('--typo-section-size'))||9;
-  const secH=secPx*1.4;
-  const annotPx=parseFloat(cs.getPropertyValue('--typo-annot-size'))||11;
-  const annotH=annotPx*1.4;
-  const symPx=parseFloat(cs.getPropertyValue('--typo-sym-size'))||18;
-  const symH=symPx;
-  const gap=2;
-  let maxH=topSpace+4;
+  return {
+    topSpace:padTop+padExtra+extraH,
+    voltaBracketH:parseFloat(cs.getPropertyValue('--volta-bracket-h'))||14,
+    secH:(parseFloat(cs.getPropertyValue('--typo-section-size'))||9)*1.4,
+    annotH:(parseFloat(cs.getPropertyValue('--typo-annot-size'))||11)*1.4,
+    symH:parseFloat(cs.getPropertyValue('--typo-sym-size'))||18,
+    rcPx:parseFloat(cs.getPropertyValue('--rc-size'))||9,
+    gap:2,
+  };
+}
+function computeOverlayHeight(measures){
+  const consts=_overlayConsts();
+  let maxH=consts.topSpace+4; // plancher minimum, comme avant
   // Si aucune liste de mesures passée, utiliser toutes les mesures (compat)
   const _realMeasures=_fbProxyRealIdx!=null?state.measures.slice(0,_fbProxyRealIdx):state.measures;
   const mList=measures||_realMeasures;
-  const rcPx=parseFloat(cs.getPropertyValue('--rc-size'))||9;
-
-  // Trouver les indices réels des mesures pour détecter les voltas qui débordent
   const allMeasures=_realMeasures;
-
   mList.forEach(m=>{
     if(!m) return;
-    const items=[];
-    if(m.section&&secObj(m.section)) items.push(secH);
-    if(m.symbols&&m.symbols.length) items.push(symH);
-    if(m.annotation) items.push(annotH);
-    if(m.repeatCount&&m.repeatCount>2) items.push(rcPx+2);
-    if(m.pedLine) items.push(14);
-    // Mesure couverte par une pedLine qui démarre avant
-    if(!m.pedLine){
-      const mIdx=allMeasures.indexOf(m);
-      if(mIdx>0){
-        for(let pi=mIdx-1;pi>=0;pi--){
-          const pm=allMeasures[pi];
-          if(pm.pedLine){
-            if((mIdx-pi)<(pm.pedLine.span||1)) items.push(14);
-            break;
-          }
-        }
-      }
-    }
-    const textH=items.reduce((s,h)=>s+h,0)+(items.length>1?(items.length-1)*gap:0);
-
-    // Volta directe ou couverte par un span d'une mesure précédente
-    let hasVolta=!!m.volta;
-    if(!hasVolta){
-      const mIdx=allMeasures.indexOf(m);
-      if(mIdx>0){
-        for(let pi=mIdx-1;pi>=0;pi--){
-          const pm=allMeasures[pi];
-          if(pm.volta){
-            const dist=mIdx-pi;
-            if(dist<(pm.volta.span||1)) hasVolta=true;
-            break;
-          }
-        }
-      }
-    }
-    const voltaH=hasVolta?voltaBracketH:0;
-    const h=topSpace+textH+voltaH;
+    const mIdx=allMeasures.indexOf(m);
+    const h=measureOverlayNeed(m,mIdx,allMeasures,consts);
     if(h>maxH) maxH=h;
   });
   return Math.ceil(maxH);
@@ -17339,8 +17700,8 @@ function reflow(){
           <div class="ph-title" onclick="openTypo();typoTab('proprietes')" title="Modifier les propriétés" style="cursor:pointer">${s.title||'Sans titre'}</div>
           ${(s.composer||s.arranger)?`
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.1rem;flex-shrink:0;cursor:pointer" onclick="openTypo();typoTab('proprietes')" title="Modifier les propriétés">
-            ${s.composer?`<span class="ph-sub" style="margin-top:0">${s.composer}</span>`:''}
-            ${s.arranger?`<span class="ph-sub" style="margin-top:0;font-style:italic">${s.arranger}</span>`:''}
+            ${s.composer?`<span class="ph-sub ph-composer" style="margin-top:0">${s.composer}</span>`:''}
+            ${s.arranger?`<span class="ph-sub ph-arranger" style="margin-top:0;font-style:italic">${s.arranger}</span>`:''}
           </div>`:''}
         </div>
         <div class="ph-tags">
@@ -17620,6 +17981,7 @@ function reflow(){
           if(ao.align) a.style.textAlign=ao.align;
           if(ao.color) a.style.color=ao.color;
           if(ao.offsetX||ao.offsetY) a.style.transform=`translate(${ao.offsetX||0}px,${ao.offsetY||0}px)`;
+          if(ao.overflow){ a.style.whiteSpace='nowrap'; a.style.zIndex='6'; a.style.width='max-content'; }
           a.style.cursor='text';a.title='Cliquer pour modifier';
           a.addEventListener('click',e=>{e.stopPropagation();if(_multiMode){toggleMultiSel(idx);return;}select(idx);openAnnotPanel(idx);});
           ov.appendChild(a);
@@ -17923,10 +18285,12 @@ function reflow(){
       // ── NOTATION ROW (au-dessus de tout) — affichage seul ──
       const hasNotation=row.measures.some(({m})=>m.notation&&!m.spacer);
       let notRowEl=null;
+      let rowNotH=0; // recalculé ci-dessous si hasNotation (remplace l'ancien calcul global)
       if(hasNotation){
         notRowEl=document.createElement('div');
         notRowEl.className='notation-row';
         notRowEl.style.gridTemplateColumns=gridTpl;
+        notRowEl.style.position='relative'; // les cellules s'y positionnent individuellement (margin-bottom)
         // Indices des mesures déjà couvertes par un span d'une mesure précédente
         const spanCovered=new Set();
         row.measures.forEach(({m,idx},ci)=>{
@@ -17936,6 +18300,11 @@ function reflow(){
             for(let s=1;s<span&&ci+s<row.measures.length;s++) spanCovered.add(ci+s);
           }
         });
+        // Mesures réelles complètes (pour la détection de span des lignes de
+        // pédale/voltas qui débordent d'une ligne à l'autre) — même liste
+        // que celle utilisée par computeOverlayHeight.
+        const _allMeasuresForOverlay=_fbProxyRealIdx!=null?state.measures.slice(0,_fbProxyRealIdx):state.measures;
+        const _ovConsts=_overlayConsts();
         row.measures.forEach(({m,idx},ci)=>{
           // Mesure couverte par un span voisin → cell vide sans hauteur
           if(spanCovered.has(ci)){
@@ -17960,6 +18329,24 @@ function reflow(){
             cell.addEventListener('click',e=>{
               e.stopPropagation(); if(_multiMode){ toggleMultiSel(idx); return; } select(idx); openNotationPanel();
             });
+            // Ne regarder QUE les mesures que cette zone couvre réellement
+            // (pas toute la ligne) pour savoir de combien la remonter —
+            // c'est ça qui règle le problème : une zone qui ne couvre que
+            // des mesures sans section/annotation/ligne de pédale/volta
+            // reste collée tout en bas, même si d'autres mesures de la
+            // même ligne, non couvertes par cette zone, ont besoin de plus
+            // de place pour leur propre pile.
+            let zoneOverlayNeed=0;
+            for(let s=0;s<effectiveSpan;s++){
+              const covIdx=idx+s;
+              const covM=_allMeasuresForOverlay[covIdx];
+              if(!covM) continue;
+              const need=measureOverlayNeed(covM,covIdx,_allMeasuresForOverlay,_ovConsts);
+              if(need>zoneOverlayNeed) zoneOverlayNeed=need;
+            }
+            cell.style.marginBottom=zoneOverlayNeed+'px';
+            const zoneTotal=zoneOverlayNeed+h;
+            if(zoneTotal>rowNotH) rowNotH=zoneTotal;
           }
           notRowEl.appendChild(cell);
         });
@@ -17974,30 +18361,38 @@ function reflow(){
         }
       });
 
-      // Calcul hauteur notation max pour cette row
-      const rowNotH=hasNotation?Math.max(...row.measures.map(({m})=>
-        m.notation&&!m.spacer?getNotationHeight(m.notation,m):0)):0;
-
-      // aboveH = volta + notation empilées (pas max — elles ne partagent plus l'espace)
-      const aboveH=rowOvH+rowNotH;
+      // aboveH = le plus grand besoin entre (a) une zone de notation avec
+      // tout ce qu'elle doit elle-même enjamber au-dessus (déjà calculé par
+      // zone ci-dessus, dans rowNotH) et (b) une mesure sans notation mais
+      // avec sa propre pile section/annotation/ligne de pédale/volta
+      // (rowOvH, sur toute la ligne comme avant). On ne les additionne plus
+      // systématiquement : chaque zone de notation ne "paie" que pour les
+      // mesures qu'elle couvre réellement (voir margin-bottom ci-dessus).
+      const aboveH=Math.max(rowOvH,rowNotH);
       groupEl.style.paddingTop=aboveH+'px';
 
       // notRowEl en haut (position 0 = au-dessus de tout) — z-index > chRowEl
+      // Hauteur totale = aboveH (pas juste rowNotH) : le bas de ce conteneur
+      // coïncide ainsi exactement avec le haut de la ligne d'accords, et
+      // chaque cellule se positionne par rapport à CE bas via son propre
+      // margin-bottom (posé plus haut), indépendamment des autres.
       if(notRowEl){
         notRowEl.style.position='absolute';
         notRowEl.style.top='0';
         notRowEl.style.left='0';
         notRowEl.style.right='0';
         notRowEl.style.width='100%';
-        notRowEl.style.height=rowNotH+'px';
+        notRowEl.style.height=aboveH+'px';
         notRowEl.style.alignItems='end';
         notRowEl.style.zIndex='11';
         groupEl.appendChild(notRowEl);
       }
 
-      // ovRowEl juste en dessous de la notation, juste au-dessus des accords — z-index > chRowEl
+      // ovRowEl : toujours positionné pour que SON bas coïncide avec le
+      // haut de la ligne d'accords (top = aboveH - rowOvH), quelle que soit
+      // la hauteur qu'ont pu prendre les zones de notation à côté.
       ovRowEl.style.position='absolute';
-      ovRowEl.style.top=rowNotH+'px';
+      ovRowEl.style.top=(aboveH-rowOvH)+'px';
       ovRowEl.style.left='0';
       ovRowEl.style.right='0';
       ovRowEl.style.height=rowOvH+'px';
@@ -19015,6 +19410,7 @@ function renderFreeBlock(block, pageInnerW){
 const SAVE_TYPO_KEYS=[
   '--typo-chord-family','--typo-chord-weight','--typo-annot-family','--typo-annot-size',
   '--typo-annot-style','--typo-title-family','--typo-title-size','--typo-title-weight',
+  '--typo-composer-size','--typo-arranger-size',
   '--typo-section-family','--typo-section-size','--typo-sym-size','--typo-sym-weight',
   '--typo-sym-family',
   '--chord-pad','--chord-fill','--chord-qual-offset','--chord-letter-spacing',
@@ -19029,6 +19425,7 @@ const SAVE_TYPO_KEYS=[
 ];
 const TYPO_KEYS=['--typo-chord-family','--typo-chord-weight','--typo-annot-family',
   '--typo-annot-size','--typo-annot-style','--typo-title-family','--typo-title-size',
+  '--typo-composer-size','--typo-arranger-size',
   '--typo-title-weight','--typo-section-family','--typo-section-size','--chord-pad',
   '--chord-fill','--chord-letter-spacing','--chord-offset-x','--chord-accid-scale',
   '--chord-accid-gap','--barline-w','--barline-bold-w','--barline-dot-r',
@@ -19576,6 +19973,7 @@ function openPedLineModal(){
   const plColorInp=document.getElementById('pl-color');
   if(plColorInp) plColorInp.value=pl.color||getComputedStyle(document.documentElement).getPropertyValue('--ped-c').trim()||'#cc2200';
   document.getElementById('pedline-modal').style.display='block';
+  renderNearbySigns('pedline-nearby-bar', sel, 'pedline', null);
 }
 function closePedLineModal(){
   document.getElementById('pedline-modal').style.display='none';
@@ -20113,7 +20511,7 @@ function _buildSaveData(){
    'ty-chord-ls','ty-chord-sup','ty-chord-sup-a','ty-chord-bass','s-phtag-scale',
   ].forEach(id=>{ const el=document.getElementById(id); if(el) typoInputs[id]=el.value; });
   typoInputs['ty-print-slot-bar']=document.getElementById('ty-print-slot-bar')?.checked||false;
-  return {state,fmt:currentFmt,screenFmt,printFmt,customFmtW:FORMATS.custom?.[0],customFmtH:FORMATS.custom?.[1],theme:document.body.dataset.theme,typo,sliders,notation,typoInputs,alignMode,widthFactors,versions,currentVersionId,lyricsSplitView:_lyricsSplitView,savedAt:Date.now()};
+  return {state,fmt:currentFmt,screenFmt,printFmt,customFmtW:FORMATS.custom?.[0],customFmtH:FORMATS.custom?.[1],typo,sliders,notation,typoInputs,alignMode,widthFactors,versions,currentVersionId,lyricsSplitView:_lyricsSplitView,savedAt:Date.now()};
 }
 
 function _restoreData(data){
@@ -20141,7 +20539,10 @@ function _restoreData(data){
   if(data.versions){ versions=data.versions; currentVersionId=data.currentVersionId||null; }
   else { versions=[]; currentVersionId=null; }
   if(data.lyricsSplitView!=null) _lyricsSplitView=!!data.lyricsSplitView;
-  if(data.theme) setTheme(data.theme);
+  // Le thème n'est plus lié au morceau : c'est un réglage de l'appareil
+  // (voir setTheme, persisté dans localStorage['cce-device-theme']) —
+  // un champ "theme" présent dans d'anciens fichiers est ignoré ici
+  // volontairement, pour ne jamais changer le thème en changeant de morceau.
   // Remet chaque réglage personnalisable à sa valeur par défaut AVANT
   // d'appliquer celles du morceau chargé — sinon un réglage jamais
   // personnalisé sur ce morceau hériterait silencieusement de la valeur
@@ -21718,7 +22119,11 @@ document.addEventListener('keydown',e=>{
   if(e.key==='n'&&!e.ctrlKey&&!e.metaKey){addMeasure();e.preventDefault()}
   if(e.key==='Escape'){closeChordPopup();sel=null;reflow()}
 });
-window.addEventListener('resize',()=>reflow());
+window.addEventListener('resize',()=>{
+  reflow();
+  const slModal=document.getElementById('setlist-editor-modal');
+  if(slModal && slModal.style.display!=='none') renderSetlistTracks();
+});
 window.addEventListener('beforeprint',()=>{
   closeAllModals();
   // NE PAS appeler setPrintMode/reflow ici — le CSS @media print gère l'impression
