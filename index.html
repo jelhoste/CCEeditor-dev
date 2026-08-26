@@ -3765,6 +3765,7 @@ ${p}
       <button class="tbtn" onclick="setlistSelectAllTracks(true)" style="font-size:.58rem">Tout</button>
       <button class="tbtn" onclick="setlistSelectAllTracks(false)" style="font-size:.58rem">Aucun</button>
       <button class="tbtn" onclick="setlistMergeSelected()" style="font-size:.58rem" title="Concatène les morceaux cochés ci-dessous en un seul, à leur emplacement dans la liste">🔗 Fusionner la sélection</button>
+      <button class="tbtn" onclick="openReaderPrefsModal()" style="font-size:.58rem;margin-left:auto" title="Préconfigure les options d'affichage du CCE Reader pour cette setlist (mode d'affichage, notations visibles, tempo, métronome...)">⚙ Réglages Reader</button>
     </div>
     <div id="setlist-tracks" style="overflow-y:auto;flex:1;padding:.5rem .7rem;column-gap:.5rem"></div>
     <div style="display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--rule);flex-shrink:0;flex-wrap:wrap">
@@ -6336,6 +6337,99 @@ function _smeCleanupDrag(){
   }
   document.querySelectorAll('#setlist-tracks > div[data-idx]').forEach(r=>r.classList.remove('sme-insert-before','sme-insert-after'));
   _smeDrag=null;
+}
+
+// ════ RÉGLAGES READER PRÉCONFIGURÉS DANS LA SETLIST ═══════════════
+// Description des préférences du menu CCE Reader qu'on peut préconfigurer
+// ici, embarquées dans la setlist elle-même : le Reader les charge UNE
+// SEULE FOIS à l'ouverture de la setlist (pas à chaque changement de
+// morceau), puis l'utilisateur du Reader reste libre de les modifier
+// depuis son propre menu ensuite — ceci ne fait que définir le point de
+// départ. Les clés correspondent exactement aux clés de l'objet "prefs"
+// du Reader, pour une compatibilité directe sans conversion.
+const READER_PREFS_SCHEMA=[
+  {key:'displayMode', label:"Mode d'affichage", type:'select', default:'consistent',
+    options:[['consistent','Cohérent (identique sur tous les appareils)'],['matchEditor',"Identique à l'éditeur (sur l'appareil qui règle ET qui lit)"]]},
+  {key:'showAnnotations', label:'Annotations', type:'bool', default:true},
+  {key:'showSections', label:'Sections', type:'bool', default:true},
+  {key:'showTempoTitles', label:'Titres tempo (clignotant)', type:'bool', default:true},
+  {key:'tempoOnPct', label:'Titre tempo — durée allumé (%)', type:'number', min:5, max:95, step:5, default:50},
+  {key:'showRhythmNotation', label:'Notation rythmique', type:'bool', default:true},
+  {key:'showOtherNotation', label:'Autres notations (onglets secondaires)', type:'bool', default:false},
+  {key:'showFreeBlocks', label:'Blocs libres', type:'bool', default:true},
+  {key:'showMeasNums', label:'Numéros de mesure', type:'bool', default:false},
+  {key:'showLyricsChords', label:'Accords sur la vue paroles', type:'bool', default:true},
+  {key:'showDiagBands', label:'Bandeaux diagrammes d\'accords', type:'bool', default:true},
+  {key:'showScaleViewers', label:'Visualiseurs de gamme', type:'bool', default:true},
+  {key:'defaultVersionLyrics', label:'Ouvrir sur la version paroles par défaut', type:'bool', default:false},
+  {key:'metroBars', label:'Métronome — mesures de précompte', type:'number', min:0, max:8, step:1, default:2},
+  {key:'metroFlashPct', label:'Métronome — durée du flash (%)', type:'number', min:5, max:80, step:5, default:20},
+  {key:'metroColor', label:'Métronome — couleur', type:'color', default:'#e05540'},
+];
+function openReaderPrefsModal(){
+  if(!_setlistCurrent) return;
+  const cur=_setlistCurrent.readerPrefs||{};
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;z-index:990;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center';
+  const inner=document.createElement('div');
+  inner.style.cssText='background:var(--modal-bg);border-radius:calc(var(--r)*2);width:min(480px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden';
+  const head=document.createElement('div');
+  head.style.cssText='padding:.7rem 1rem;border-bottom:1px solid var(--rule);flex-shrink:0';
+  head.innerHTML=`<div style="font-family:var(--font-mono);font-size:.72rem;font-weight:700;color:var(--ink)">⚙ Réglages Reader pour cette setlist</div>
+    <div style="font-family:var(--font-mono);font-size:.55rem;color:var(--ink3);margin-top:.2rem">
+      Chargés une seule fois à l'ouverture de la setlist dans le Reader — modifiables ensuite librement depuis son propre menu.</div>`;
+  const body=document.createElement('div');
+  body.style.cssText='overflow-y:auto;flex:1;padding:.6rem 1rem;display:flex;flex-direction:column;gap:.55rem';
+  READER_PREFS_SCHEMA.forEach(item=>{
+    const val=cur[item.key]!==undefined?cur[item.key]:item.default;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:.5rem;min-height:36px';
+    if(item.type==='bool'){
+      row.innerHTML=`<input type="checkbox" id="rpm-${item.key}" ${val?'checked':''} style="width:20px;height:20px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)">
+        <label for="rpm-${item.key}" style="font-family:var(--font-mono);font-size:.62rem;color:var(--ink);cursor:pointer">${item.label}</label>`;
+    } else if(item.type==='select'){
+      row.innerHTML=`<span style="font-family:var(--font-mono);font-size:.62rem;color:var(--ink);flex:1">${item.label}</span>
+        <select id="rpm-${item.key}" class="fi" style="font-size:.6rem;flex-shrink:0">
+          ${item.options.map(([v,l])=>`<option value="${v}" ${v===val?'selected':''}>${l}</option>`).join('')}
+        </select>`;
+    } else if(item.type==='number'){
+      row.innerHTML=`<span style="font-family:var(--font-mono);font-size:.62rem;color:var(--ink);flex:1">${item.label}</span>
+        <input type="number" id="rpm-${item.key}" class="fi" value="${val}" min="${item.min}" max="${item.max}" step="${item.step}" style="width:70px;flex-shrink:0">`;
+    } else if(item.type==='color'){
+      row.innerHTML=`<span style="font-family:var(--font-mono);font-size:.62rem;color:var(--ink);flex:1">${item.label}</span>
+        <input type="color" id="rpm-${item.key}" value="${val}" style="width:32px;height:28px;padding:0;border-radius:4px;cursor:pointer;flex-shrink:0">`;
+    }
+    body.appendChild(row);
+  });
+  const foot=document.createElement('div');
+  foot.style.cssText='display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--rule);flex-shrink:0';
+  const btnReset=document.createElement('button');
+  btnReset.className='tbtn'; btnReset.textContent='Réinitialiser'; btnReset.style.cssText='font-size:.62rem';
+  btnReset.title='Efface la préconfiguration : le Reader utilisera ses propres réglages par défaut';
+  btnReset.onclick=()=>{ delete _setlistCurrent.readerPrefs; modal.remove(); _showSaveStatus('✓ Préconfiguration Reader effacée — pense à sauvegarder la setlist'); };
+  const btnCancel=document.createElement('button');
+  btnCancel.className='tbtn'; btnCancel.textContent='Annuler'; btnCancel.style.cssText='font-size:.62rem;margin-left:auto';
+  btnCancel.onclick=()=>modal.remove();
+  const btnSave=document.createElement('button');
+  btnSave.className='tbtn'; btnSave.textContent='Appliquer';
+  btnSave.style.cssText='font-size:.62rem;background:var(--accent);color:var(--acfg);border-color:var(--accent)';
+  btnSave.onclick=()=>{
+    const out={};
+    READER_PREFS_SCHEMA.forEach(item=>{
+      const el=document.getElementById('rpm-'+item.key); if(!el) return;
+      if(item.type==='bool') out[item.key]=el.checked;
+      else if(item.type==='number') out[item.key]=parseFloat(el.value);
+      else out[item.key]=el.value;
+    });
+    _setlistCurrent.readerPrefs=out;
+    modal.remove();
+    _showSaveStatus('✓ Réglages Reader préconfigurés — pense à sauvegarder la setlist');
+  };
+  foot.appendChild(btnReset); foot.appendChild(btnCancel); foot.appendChild(btnSave);
+  inner.appendChild(head); inner.appendChild(body); inner.appendChild(foot);
+  modal.appendChild(inner);
+  modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
+  showModal(modal);
 }
 
 function setlistNew(){ closeSetlistModal(); openSetlistEditor(null); }
