@@ -22302,6 +22302,14 @@ applyChordFill(1.0);
 applyQualOffset(-0.05);
 initUiZoom();
 reflow();
+// Voir le même correctif côté Reader : le tout premier reflow() peut
+// s'exécuter avant que les polices personnalisées aient fini de charger,
+// donnant des largeurs de mesure légèrement fausses tant qu'aucune autre
+// interaction ne déclenche un nouveau reflow derrière. On relance donc un
+// reflow correctif dès que les polices sont réellement prêtes.
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(()=>{ reflow(); });
+}
 </script>
 
 <!-- ══ MODALE CONFIRMATION ══════════════════════════════════ -->
