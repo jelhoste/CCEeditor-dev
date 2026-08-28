@@ -14,7 +14,7 @@
 // automatiquement à l'activation.
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'cce-editor-v23';
+const CACHE_VERSION = 'cce-editor-v24';
 
 // Chemins RELATIFS au dossier de ce fichier (important pour GitHub Pages,
 // où le site est souvent servi sous un sous-dossier, pas à la racine).
